@@ -6,10 +6,14 @@ import android.media.AudioManager;
 import android.media.AudioRecord;
 import android.media.MediaRecorder;
 import android.os.Bundle;
+import android.os.Handler;
 import android.util.Log;
 import android.view.View;
 import android.widget.CheckBox;
 import android.widget.TextView;
+
+import java.nio.Buffer;
+import java.nio.ShortBuffer;
 
 /**
  * Created by rick on 19/10/2015.
@@ -17,6 +21,7 @@ import android.widget.TextView;
 public class AudioActivity extends Activity {
 
     public static final String DEBUG = "DEBUG";
+    private static final long REPEAT_INTERVAL = 40;
     private AudioRecord recorder;
     private static final int RECORDER_SAMPLERATE = 8000;
     private static final int RECORDER_CHANNELS = AudioFormat.CHANNEL_IN_MONO;
@@ -24,22 +29,17 @@ public class AudioActivity extends Activity {
 
     private Thread recordingThread = null;
     private boolean isRecording = false;
+    private TextView textView;
+
+    private Handler handler;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.audio_layout);
-//        recorder = new AudioRecord(MediaRecorder.AudioSource.MIC, 44100,
-//                RECORDER_SAMPLERATE, RECORDER_AUDIO_ENCODING, AudioRecord.getMinBufferSize(RECORDER_SAMPLERATE, RECORDER_CHANNELS, RECORDER_AUDIO_ENCODING));
-
-        TextView msg = (TextView) findViewById(R.id.textView2);
-        msg.setText("Foo");
-//        Log.d("DEBUG", "" + recorder.getState());
-
-        //CONFIGURE BUTTONS
-        //START/STOP recording
-
-        //Visualize audio data
+        textView = (TextView) findViewById(R.id.textView2);
+        textView.setText("----------------------------------------");
+        handler = new Handler();
     }
 
     public void onCheckboxClicked(View view) {
@@ -60,8 +60,9 @@ public class AudioActivity extends Activity {
         }
     }
 
+    static int counter = 0;
     private void startRecording() {
-        int BufferElements2Rec = 1024; // want to play 2048 (2K) since 2 bytes we use only 1024
+        final int BufferElements2Rec = 1024; // want to play 2048 (2K) since 2 bytes we use only 1024
         int BytesPerElement = 2; // 2 bytes in 16bit format
         recorder = new AudioRecord(MediaRecorder.AudioSource.MIC,
                 RECORDER_SAMPLERATE, RECORDER_CHANNELS,
@@ -69,12 +70,37 @@ public class AudioActivity extends Activity {
 
         recorder.startRecording();
         isRecording = true;
-        recordingThread = new Thread(new Runnable() {
+//        int counter = 0;
+        Runnable updateVisualizer = new Runnable() {
+            @Override
             public void run() {
-                Log.d(DEBUG, "RECORDING");
+
+                if (isRecording) // if we are already recording
+                {
+                    textView.setText("Counter:" + ++counter);
+                    // update in 40 milliseconds
+                    handler.postDelayed(this, REPEAT_INTERVAL);
+                }
             }
-        }, "AudioRecorder Thread");
-        recordingThread.start();
+        };
+
+        handler.post(updateVisualizer);
+//        recordingThread = new Thread(new Runnable() {
+//            public void run() {
+//                Log.d(DEBUG, "RECORDING");
+//                short[] audioData = new short[BufferElements2Rec];
+//                int counter = 0;
+////                while(isRecording){
+////                    int bufferReadResult = recorder.read(audioData, 0, audioData.length);
+////                    if(bufferReadResult == BufferElements2Rec){
+////                        Buffer realAudioData1024 = ShortBuffer.wrap(audioData, 0, 1024);
+//////                        textView.setText("Counter:" + 0);
+////                    }
+////
+////                }
+//            }
+//        }, "AudioRecorder Thread");
+//        runOnUiThread(recordingThread);
     }
 
     private void stopRecording() {
@@ -85,6 +111,7 @@ public class AudioActivity extends Activity {
             recorder.release();
             recorder = null;
             recordingThread = null;
+            Log.d(DEBUG, "STOPPED RECORDING");
         }
     }
 
