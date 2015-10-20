@@ -14,7 +14,7 @@ import android.widget.TextView;
 public class AudioActivity extends Activity {
 
     public static final String DEBUG = "DEBUG";
-    private static final long REPEAT_INTERVAL_IN_MILLI = 20;
+    private static final long REPEAT_INTERVAL_IN_MILLI = 80;
     private AudioRecord recorder;
     private static final int RECORDER_SAMPLERATE = 41000;
     private static final int RECORDER_CHANNELS = AudioFormat.CHANNEL_IN_STEREO;
@@ -75,7 +75,6 @@ public class AudioActivity extends Activity {
                     }
                     textView.setText(sb.toString());
 
-                    // update in 40 milliseconds
                     handler.postDelayed(this, REPEAT_INTERVAL_IN_MILLI);
                 }
             }
