@@ -11,13 +11,10 @@ import android.view.View;
 import android.widget.CheckBox;
 import android.widget.TextView;
 
-/**
- * Created by rick on 19/10/2015.
- */
 public class AudioActivity extends Activity {
 
     public static final String DEBUG = "DEBUG";
-    private static final long REPEAT_INTERVAL_IN_MILLI = 100;
+    private static final long REPEAT_INTERVAL_IN_MILLI = 20;
     private AudioRecord recorder;
     private static final int RECORDER_SAMPLERATE = 41000;
     private static final int RECORDER_CHANNELS = AudioFormat.CHANNEL_IN_STEREO;
