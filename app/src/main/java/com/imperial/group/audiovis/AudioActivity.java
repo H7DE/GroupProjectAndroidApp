@@ -2,7 +2,6 @@ package com.imperial.group.audiovis;
 
 import android.app.Activity;
 import android.media.AudioFormat;
-import android.media.AudioManager;
 import android.media.AudioRecord;
 import android.media.MediaRecorder;
 import android.os.Bundle;
@@ -12,26 +11,23 @@ import android.view.View;
 import android.widget.CheckBox;
 import android.widget.TextView;
 
-import java.nio.Buffer;
-import java.nio.ShortBuffer;
-
 /**
  * Created by rick on 19/10/2015.
  */
 public class AudioActivity extends Activity {
 
     public static final String DEBUG = "DEBUG";
-    private static final long REPEAT_INTERVAL = 40;
+    private static final long REPEAT_INTERVAL_IN_MILLI = 100;
     private AudioRecord recorder;
-    private static final int RECORDER_SAMPLERATE = 8000;
-    private static final int RECORDER_CHANNELS = AudioFormat.CHANNEL_IN_MONO;
+    private static final int RECORDER_SAMPLERATE = 41000;
+    private static final int RECORDER_CHANNELS = AudioFormat.CHANNEL_IN_STEREO;
     private static final int RECORDER_AUDIO_ENCODING = AudioFormat.ENCODING_PCM_16BIT;
 
-    private Thread recordingThread = null;
     private boolean isRecording = false;
     private TextView textView;
-
     private Handler handler;
+    public static final int ONE_KB = 1024;
+    public static final int BYTES_IN_SHORT = 2;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -60,57 +56,55 @@ public class AudioActivity extends Activity {
         }
     }
 
-    static int counter = 0;
+
     private void startRecording() {
-        final int BufferElements2Rec = 1024; // want to play 2048 (2K) since 2 bytes we use only 1024
-        int BytesPerElement = 2; // 2 bytes in 16bit format
         recorder = new AudioRecord(MediaRecorder.AudioSource.MIC,
                 RECORDER_SAMPLERATE, RECORDER_CHANNELS,
-                RECORDER_AUDIO_ENCODING, BufferElements2Rec * BytesPerElement);
+                RECORDER_AUDIO_ENCODING, ONE_KB * BYTES_IN_SHORT);
 
         recorder.startRecording();
         isRecording = true;
-//        int counter = 0;
+        final short sData[] = new short[ONE_KB];
+
+        //TODO: find better concurrency mechanism
         Runnable updateVisualizer = new Runnable() {
             @Override
             public void run() {
+                final StringBuilder sb = new StringBuilder();
+                if (isRecording) {
+                    recorder.read(sData, 0, ONE_KB);
+                    for (int i = 0; i < ONE_KB; i += 32) {
+                        sb.append(intToString(sData[i])).append("\n");
+                    }
+                    textView.setText(sb.toString());
 
-                if (isRecording) // if we are already recording
-                {
-                    textView.setText("Counter:" + ++counter);
                     // update in 40 milliseconds
-                    handler.postDelayed(this, REPEAT_INTERVAL);
+                    handler.postDelayed(this, REPEAT_INTERVAL_IN_MILLI);
                 }
             }
         };
 
         handler.post(updateVisualizer);
-//        recordingThread = new Thread(new Runnable() {
-//            public void run() {
-//                Log.d(DEBUG, "RECORDING");
-//                short[] audioData = new short[BufferElements2Rec];
-//                int counter = 0;
-////                while(isRecording){
-////                    int bufferReadResult = recorder.read(audioData, 0, audioData.length);
-////                    if(bufferReadResult == BufferElements2Rec){
-////                        Buffer realAudioData1024 = ShortBuffer.wrap(audioData, 0, 1024);
-//////                        textView.setText("Counter:" + 0);
-////                    }
-////
-////                }
-//            }
-//        }, "AudioRecorder Thread");
-//        runOnUiThread(recordingThread);
+    }
+
+    //Convert an integer value into a number of '*' for audio visualisation
+    String intToString(int x) {
+        String str = "";
+        x = Math.abs(x);
+        x /= 16;
+        for (int i = 0; i <= x; ++i) {
+            str += "*";
+        }
+        return str;
     }
 
     private void stopRecording() {
-        // stops the recording activity
         if (null != recorder) {
             isRecording = false;
             recorder.stop();
             recorder.release();
             recorder = null;
-            recordingThread = null;
+//            recordingThread = null;
             Log.d(DEBUG, "STOPPED RECORDING");
         }
     }
