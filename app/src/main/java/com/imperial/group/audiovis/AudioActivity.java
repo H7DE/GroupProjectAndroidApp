@@ -20,6 +20,7 @@ public class AudioActivity extends Activity {
     private static final int RECORDER_CHANNELS = AudioFormat.CHANNEL_IN_STEREO;
     private static final int RECORDER_AUDIO_ENCODING = AudioFormat.ENCODING_PCM_16BIT;
 
+
     private boolean isRecording = false;
     private TextView textView;
     private Handler handler;
